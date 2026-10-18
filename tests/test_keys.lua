@@ -49,7 +49,11 @@ end
 dofile("keys/keys.lua")
 local Shift, Alt, Control = mudlet.keymodifier.Shift, mudlet.keymodifier.Alt, mudlet.keymodifier.Control
 
-check("declares the GMCP module", gmcpSent[1] == "enable mongoose.keys Client.Keystrokes")
+check("takes back the bare Client namespace", gmcpSent[1] == [[Core.Supports.Remove ["Client 1"] ]])
+check("declares Client.Keystrokes alone", gmcpSent[2] == [[Core.Supports.Add ["Client.Keystrokes 1"] ]])
+check("does not use gmod, which would declare Client", #gmcpSent == 2)
+handlers["sysProtocolEnabled"](nil, "GMCP")
+check("declares again on reconnect", gmcpSent[4] == [[Core.Supports.Add ["Client.Keystrokes 1"] ]])
 
 arrive("Layer", {id = "#16186", label = "Yahtzee", modal = true, bindings = {
   {key = "F1", modifiers = {}, command = "rules", label = "How to play", autosend = true},

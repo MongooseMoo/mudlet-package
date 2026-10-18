@@ -242,11 +242,20 @@ K.handlers = {
   registerAnonymousEventHandler("gmcp.Client.Keystrokes.UnbindAll", K.onUnbindAll),
   registerAnonymousEventHandler("gmcp.Client.Keystrokes.ListBindings", K.onListBindings),
   registerAnonymousEventHandler("sysDisconnectionEvent", K.onDisconnect),
+  registerAnonymousEventHandler("sysProtocolEnabled", function(_, protocol)
+    if protocol == "GMCP" then K.declare() end
+  end),
 }
+
+-- Tells the server this client takes Client.Keystrokes. Not with gmod.enableModule: that also declares
+-- the bare "Client" namespace, which the server reads as every Client.* package, Client.Html among them,
+-- and Client.Html replaces room text. Version 1 did that, so take the namespace back.
+function K.declare()
+  sendGMCP([[Core.Supports.Remove ["Client 1"] ]])
+  sendGMCP([[Core.Supports.Add ["Client.Keystrokes 1"] ]])
+end
 
 if K.toggleKey then killKey(K.toggleKey) end
 K.toggleKey = tempKey(TOGGLE_MASK, mudlet.key.H, K.toggle)
 K.install()
-
--- Tells the server, now and on every reconnect, that this client takes Client.Keystrokes.
-gmod.enableModule("mongoose.keys", "Client.Keystrokes")
+K.declare()
