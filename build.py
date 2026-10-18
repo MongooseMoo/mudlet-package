@@ -16,6 +16,7 @@ NAME = "mongoose"
 MODULES = [
     ("Mongoose keys", ROOT / "keys" / "keys.lua"),
     ("Mongoose mapper", ROOT / "mapper" / "mapper.lua"),
+    ("Mongoose and the starter UI", ROOT / "ui" / "ui.lua"),
 ]
 FIXED_TIME = (2026, 10, 18, 0, 0, 0)
 

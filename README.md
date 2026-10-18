@@ -13,6 +13,9 @@ The package Mongoose (`mongoose.world`) gives Mudlet. When you log in with Mudle
   [`docs/keystrokes.md`](https://github.com/MongooseMoo/react-client/blob/master/docs/keystrokes.md) in the web
   client.
 - **Map** (`mapper/mapper.lua`): draws the rooms you visit from GMCP `Room.Info`, and walks you to a room you click.
+- **Starter UI** (`ui/ui.lua`): Mudlet's starter UI hides itself when any game package installs. This package has
+  no interface of its own, so it brings the starter UI back (its dock, map and chat tabs), unless you hid it
+  yourself with `baseui hide`.
 
 ## Test, build and release
 
