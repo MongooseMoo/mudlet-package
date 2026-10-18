@@ -12,6 +12,9 @@ package per profile, so both live here. The full record of the keys work is the 
 - `keys/keys.lua` written from Mudlet's own source (tempKey, killKey, mudlet.key, gmod.enableModule,
   gmcp.* events); `tests/test_keys.lua` passes 19/19 under Lua 5.4 with stand-ins for Mudlet's functions.
 - `mapper/mapper.lua` is the mapping session's file, unchanged.
+- v2: keys declares `Client.Keystrokes` itself and withdraws the bare `Client` namespace, which made the server send
+  room descriptions as HTML. v3: `ui/ui.lua` brings back Mudlet's starter UI, which stands aside (persistently)
+  whenever a Client.GUI package installs; `tests/test_ui.lua` 6/6.
 - `build.py VERSION` builds a byte-reproducible `dist/mongoose.mpackage`.
 - Not yet run in a real Mudlet: there is none on the machine it was written on.
 
