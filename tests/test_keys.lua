@@ -6,7 +6,8 @@ local said, sent, gmcpSent, handlers, keys, nextKey = {}, {}, {}, {}, {}, 0
 local cmdLine = ""
 
 mudlet = {
-  key = {A = 0x41, H = 0x48, P = 0x50, R = 0x52, S = 0x53, F1 = 0x01000030, Left = 0x01000012},
+  key = {Space = 0x20, Exclam = 0x21, A = 0x41, H = 0x48, P = 0x50, R = 0x52, S = 0x53, X = 0x58,
+    F1 = 0x01000030, Left = 0x01000012},
   keymodifier = {Shift = 0x02000000, Control = 0x04000000, Alt = 0x08000000, Meta = 0x10000000},
 }
 gmcp = {Client = {Keystrokes = {}}}
@@ -14,12 +15,21 @@ yajl = {to_string = function(value) return "<json " .. #value .. ">" end}
 gmod = {enableModule = function(user, module) gmcpSent[#gmcpSent + 1] = "enable " .. user .. " " .. module end}
 
 function echo(text) said[#said + 1] = (text:gsub("^\n%[Keys%] ", ""):gsub("\n$", "")) end
-function send(command) sent[#sent + 1] = command end
 function sendGMCP(message) gmcpSent[#gmcpSent + 1] = message end
 function getCmdLine() return cmdLine end
 function clearCmdLine() cmdLine = "" end
 function appendCmdLine(text) cmdLine = cmdLine .. text end
 function registerAnonymousEventHandler(event, fn) handlers[event] = fn; return event end
+-- Mudlet raises sysDataSendRequest for every send, the package's own among them (ctelnet.cpp sendData).
+function send(command)
+  sent[#sent + 1] = command
+  if handlers["sysDataSendRequest"] then handlers["sysDataSendRequest"]("sysDataSendRequest", command) end
+end
+local function sendCmdLine()
+  handlers["sysDataSendRequest"]("sysDataSendRequest", cmdLine)
+  sent[#sent + 1] = cmdLine
+  cmdLine = ""
+end
 function killAnonymousEventHandler(id) handlers[id] = nil end
 function tempKey(mask, code, fn)
   nextKey = nextKey + 1
@@ -70,15 +80,43 @@ check("a layer cannot take Alt+Shift+H", #sent == 0 and mongoose.keys.keysMode)
 
 press(mudlet.key.S)
 check("s sends sheet", sent[#sent] == "sheet")
-press(mudlet.key.S, Shift)
-check("Shift+S stages score", cmdLine == "score " and #sent == 1)
+check("its own send does not count as the player sending", mongoose.keys.keysMode)
+check("an unbound letter is taken, so it does not type", press(mudlet.key.X) and cmdLine == "" and #sent == 1)
+check("and so is Shift with it", press(mudlet.key.X, Shift))
+check("and punctuation", press(mudlet.key.Exclam))
+check("Space is left to Mudlet, which types it regardless", not press(mudlet.key.Space))
+cmdLine = "half typed"
 press(mudlet.key.S)
-check("with text in the command line, s types", cmdLine == "score s" and #sent == 1)
-press(mudlet.key.S, Shift)
-check("and Shift+S types a capital", cmdLine == "score sS" and #sent == 1)
+check("with text in the command line, s still sends sheet", sent[#sent] == "sheet" and cmdLine == "half typed")
 clearCmdLine()
+press(mudlet.key.S, Shift)
+check("Shift+S stages score", cmdLine == "score " and #sent == 2)
+check("and turns keys mode off so the rest can be typed",
+  not mongoose.keys.keysMode and said[#said] == "Keys mode off" and not press(mudlet.key.X))
+appendCmdLine("chance")
+sendCmdLine()
+check("sending it turns keys mode back on", mongoose.keys.keysMode and said[#said] == "Keys mode on"
+  and sent[#sent] == "score chance")
 press(mudlet.key.F1)
 check("F1 sends rules", sent[#sent] == "rules")
+
+press(mudlet.key.F1, Alt + Shift)
+check("Alt+Shift+F1 turns key help on", mongoose.keys.help and said[#said]:match("^Key help on"))
+local before = #sent
+press(mudlet.key.S)
+check("key help says a bound key", said[#said] == "S: Scorecards")
+press(mudlet.key.S, Shift)
+check("with its modifiers", said[#said] == "Shift+S: Score in a category")
+press(mudlet.key.X)
+check("and an unbound one", said[#said] == "X: not bound")
+press(mudlet.key.H, Alt + Shift)
+check("and the keys mode toggle, without toggling", said[#said] == "Alt+Shift+H turns keys mode on and off"
+  and mongoose.keys.keysMode)
+check("key help sends nothing", #sent == before)
+press(mudlet.key.F1, Alt + Shift)
+check("Alt+Shift+F1 ends key help", not mongoose.keys.help and said[#said] == "Key help off")
+press(mudlet.key.S)
+check("and the keys work again", sent[#sent] == "sheet")
 
 arrive("Layer", {id = "#12", label = "Helm console", bindings = {
   {key = "s", modifiers = {"ctrl"}, command = "scan %1", label = "Scan", autosend = true},

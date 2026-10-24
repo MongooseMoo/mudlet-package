@@ -8,8 +8,11 @@ The package Mongoose (`mongoose.world`) gives Mudlet. When you log in with Mudle
 
 - **Keys** (`keys/keys.lua`): while you sit at a game or man a ship's console, the server sends its keys (GMCP
   `Client.Keystrokes` layers) and this module makes them Mudlet keys. Keys that are plain letters, digits, arrows
-  or F-keys work only in keys mode: **Alt+Shift+H** turns it on and off. They work only while the command line is
-  empty; once you start typing, they type. Type `keys` in the game to hear what you have. The protocol is
+  or F-keys work only in keys mode: **Alt+Shift+H** turns it on and off. In keys mode no key types into the command
+  line, except Space: Mudlet always types a plain Space. A key that starts a command for you to finish (Shift+S
+  for a Yahtzee score) turns keys mode off so you can type the rest, and sending it turns keys mode back on.
+  **Alt+Shift+F1** is key help: each key says what it does instead of doing it, until Alt+Shift+F1 again. Type
+  `keys` in the game to hear what you have. The protocol is
   [`docs/keystrokes.md`](https://github.com/MongooseMoo/react-client/blob/master/docs/keystrokes.md) in the web
   client.
 - **Map** (`mapper/mapper.lua`): draws the rooms you visit from GMCP `Room.Info`, and walks you to a room you click.

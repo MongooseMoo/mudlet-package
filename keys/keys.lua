@@ -3,8 +3,10 @@
 -- The server sends a layer of keys while the player uses something (a game they
 -- sit at, a console they man) and removes it when they stop. A key without Ctrl,
 -- Alt or Meta would take a letter away from typing, so those work only in keys
--- mode (Alt+Shift+H), and only while the command line is empty: once it has
--- text, they type. The contract is docs/keystrokes.md in MongooseMoo/react-client.
+-- mode (Alt+Shift+H). In keys mode no key types, bound or not, except Space:
+-- Mudlet never offers a plain Space to key bindings. Alt+Shift+F1 is key help,
+-- where each key says what it does. The contract is docs/keystrokes.md in
+-- MongooseMoo/react-client.
 
 mongoose = mongoose or {}
 mongoose.keys = mongoose.keys or {}
@@ -12,6 +14,8 @@ local K = mongoose.keys
 
 K.layers = K.layers or {}       -- in arrival order; the last one wins a key two layers bind
 K.keysMode = K.keysMode or false
+K.help = K.help or false
+K.resumeOnSend = K.resumeOnSend or false -- a staged command turned keys mode off until it is sent
 K.installed = K.installed or {} -- tempKey ids of the bindings now live
 
 local MODIFIERS = {
@@ -32,8 +36,20 @@ local function say(text)
   echo("\n[Keys] " .. text .. "\n")
 end
 
--- A binding's Mudlet key code and modifier mask, and whether it is a typing key
--- (no Ctrl, Alt or Meta). Nil when Mudlet has no such key.
+local MODIFIER_NAMES = {{"Control", "Ctrl"}, {"Alt", "Alt"}, {"Shift", "Shift"}, {"Meta", "Meta"}}
+
+-- How key help says a key: "Ctrl+Alt+S".
+local function keyName(used, name)
+  local parts = {}
+  for _, pair in ipairs(MODIFIER_NAMES) do
+    if used[pair[1]] then parts[#parts + 1] = pair[2] end
+  end
+  parts[#parts + 1] = name
+  return table.concat(parts, "+")
+end
+
+-- A binding's Mudlet key code and modifier mask, whether it is a typing key
+-- (no Ctrl, Alt or Meta), and its name for key help. Nil when Mudlet has no such key.
 local function chord(binding)
   local key = binding.key or ""
   local name
@@ -54,11 +70,15 @@ local function chord(binding)
     end
     if mod ~= "Shift" then typing = false end
   end
-  return code, mask, typing
+  return code, mask, typing, keyName(used, name)
 end
 
 local TOGGLE_MASK = mudlet.keymodifier.Alt + mudlet.keymodifier.Shift
 local TOGGLE_CHORD = TOGGLE_MASK .. ":" .. mudlet.key.H
+local HELP_CHORD = TOGGLE_MASK .. ":" .. mudlet.key.F1
+-- Mudlet's codes for the Latin-1 characters, Exclam to ydiaeresis. Space (0x20)
+-- is left out: Mudlet types it without asking the key bindings.
+local FIRST_CHARACTER, LAST_CHARACTER = 0x21, 0xff
 
 local function expand(command, line)
   local words = {}
@@ -68,26 +88,23 @@ local function expand(command, line)
   return command
 end
 
-local function fire(binding, typing)
-  local line = getCmdLine()
-  if typing and line ~= "" then
-    -- Mudlet has already taken the key, so type it ourselves.
-    local key = binding.key or ""
-    if #key == 1 then
-      local shifted = false
-      for _, modifier in ipairs(binding.modifiers or {}) do
-        if modifier:lower() == "shift" then shifted = true end
-      end
-      appendCmdLine(shifted and key:upper() or key:lower())
-    end
+local function fire(binding)
+  local command = expand(binding.command, getCmdLine())
+  if binding.autosend ~= false then
+    -- Our own send is not the player sending a staged command.
+    K.sending = true
+    send(command)
+    K.sending = false
     return
   end
-  local command = expand(binding.command, line)
-  if binding.autosend == false then
-    clearCmdLine()
-    appendCmdLine(command)
-  else
-    send(command)
+  clearCmdLine()
+  appendCmdLine(command)
+  if K.keysMode then
+    -- The player types the rest; sending it turns keys mode back on.
+    K.keysMode = false
+    K.resumeOnSend = true
+    K.install()
+    say("Keys mode off")
   end
 end
 
@@ -95,15 +112,35 @@ function K.install()
   for _, id in ipairs(K.installed) do killKey(id) end
   K.installed = {}
   local taken = {}
+  local function add(mask, code, fn)
+    local id = mask .. ":" .. code
+    if taken[id] or id == TOGGLE_CHORD or id == HELP_CHORD then return end
+    taken[id] = true
+    K.installed[#K.installed + 1] = tempKey(mask, code, fn)
+  end
   for i = #K.layers, 1, -1 do
     local bindings = K.layers[i].bindings
     for j = #bindings, 1, -1 do
       local binding = bindings[j]
-      local code, mask, typing = chord(binding)
-      local id = code and (mask .. ":" .. code)
-      if id and not taken[id] and id ~= TOGGLE_CHORD and (K.keysMode or not typing) then
-        taken[id] = true
-        K.installed[#K.installed + 1] = tempKey(mask, code, function() fire(binding, typing) end)
+      local code, mask, typing, name = chord(binding)
+      if code and K.help then
+        add(mask, code, function() say(name .. ": " .. (binding.label or binding.command)) end)
+      elseif code and (K.keysMode or not typing) then
+        add(mask, code, function() fire(binding) end)
+      end
+    end
+  end
+  if not (K.keysMode or K.help) then return end
+  -- A bound key Mudlet runs is not typed, so every other character key gets one that does nothing.
+  local shift = mudlet.keymodifier.Shift
+  for name, code in pairs(mudlet.key) do
+    if code >= FIRST_CHARACTER and code <= LAST_CHARACTER then
+      if K.help then
+        add(0, code, function() say(name .. ": not bound") end)
+        add(shift, code, function() say("Shift+" .. name .. ": not bound") end)
+      else
+        add(0, code, function() end)
+        add(shift, code, function() end)
       end
     end
   end
@@ -118,11 +155,28 @@ local function modalLabels()
 end
 
 function K.toggle()
+  if K.help then return say("Alt+Shift+H turns keys mode on and off") end
   K.keysMode = not K.keysMode
+  K.resumeOnSend = false
   K.install()
   if not K.keysMode then return say("Keys mode off") end
   local labels = modalLabels()
   say(#labels > 0 and ("Keys mode on: " .. table.concat(labels, ", ")) or "Keys mode on")
+end
+
+-- Mudlet keeps a plain Escape for itself, so only Alt+Shift+F1 ends key help.
+function K.toggleHelp()
+  K.help = not K.help
+  K.install()
+  say(K.help and "Key help on. Press a key to hear what it does. Alt+Shift+F1 ends key help." or "Key help off")
+end
+
+function K.onSend()
+  if not K.resumeOnSend or K.sending then return end
+  K.resumeOnSend = false
+  K.keysMode = true
+  K.install()
+  say("Keys mode on")
 end
 
 local function indexOf(id)
@@ -150,8 +204,12 @@ local function removeLayer(id)
   local i = indexOf(id)
   if not i then return end
   local layer = table.remove(K.layers, i)
-  local ends = layer.modal and K.keysMode and #modalLabels() == 0
-  if ends then K.keysMode = false end
+  local lastModal = layer.modal and #modalLabels() == 0
+  local ends = lastModal and K.keysMode
+  if lastModal then
+    K.keysMode = false
+    K.resumeOnSend = false
+  end
   K.install()
   if layer.id == "" then return ends and "Keys mode off" or nil end
   return layer.label .. " keys removed" .. (ends and ". Keys mode off" or "")
@@ -229,6 +287,8 @@ end
 function K.onDisconnect()
   K.layers = {}
   K.keysMode = false
+  K.help = false
+  K.resumeOnSend = false
   K.install()
 end
 
@@ -242,6 +302,7 @@ K.handlers = {
   registerAnonymousEventHandler("gmcp.Client.Keystrokes.UnbindAll", K.onUnbindAll),
   registerAnonymousEventHandler("gmcp.Client.Keystrokes.ListBindings", K.onListBindings),
   registerAnonymousEventHandler("sysDisconnectionEvent", K.onDisconnect),
+  registerAnonymousEventHandler("sysDataSendRequest", K.onSend),
   registerAnonymousEventHandler("sysProtocolEnabled", function(_, protocol)
     if protocol == "GMCP" then K.declare() end
   end),
@@ -257,5 +318,7 @@ end
 
 if K.toggleKey then killKey(K.toggleKey) end
 K.toggleKey = tempKey(TOGGLE_MASK, mudlet.key.H, K.toggle)
+if K.helpKey then killKey(K.helpKey) end
+K.helpKey = tempKey(TOGGLE_MASK, mudlet.key.F1, K.toggleHelp)
 K.install()
 K.declare()
