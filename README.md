@@ -16,6 +16,10 @@ The package Mongoose (`mongoose.world`) gives Mudlet. When you log in with Mudle
   [`docs/keystrokes.md`](https://github.com/MongooseMoo/react-client/blob/master/docs/keystrokes.md) in the web
   client.
 - **Map** (`mapper/mapper.lua`): draws the rooms you visit from GMCP `Room.Info`, and walks you to a room you click.
+- **Status** (`status/status.lua`): speaks your status from GMCP `Char.Vitals`, `Char.Effects` and `Char.Target`.
+  **Alt+H** says your health as a percent with how you look, **Alt+M** every power reserve (mana, qi and the
+  like), **Alt+V** your body reserve, **Alt+T** the health of what you are fighting. When your health falls below
+  50, 25 or 10 percent it says so once. When an effect starts or ends it says which.
 - **Starter UI** (`ui/ui.lua`): Mudlet's starter UI hides itself when any game package installs. This package has
   no interface of its own, so it brings the starter UI back (its dock, map and chat tabs), unless you hid it
   yourself with `baseui hide`.
@@ -24,6 +28,7 @@ The package Mongoose (`mongoose.world`) gives Mudlet. When you log in with Mudle
 
 ```sh
 lua tests/test_keys.lua    # the keys module against stand-ins for Mudlet's functions
+lua tests/test_status.lua  # the status module, likewise
 python build.py 2          # writes dist/mongoose.mpackage
 gh release create v2 dist/mongoose.mpackage --title "Mongoose 2"
 ```

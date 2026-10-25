@@ -15,6 +15,8 @@ package per profile, so both live here. The full record of the keys work is the 
 - v2: keys declares `Client.Keystrokes` itself and withdraws the bare `Client` namespace, which made the server send
   room descriptions as HTML. v3: `ui/ui.lua` brings back Mudlet's starter UI, which stands aside (persistently)
   whenever a Client.GUI package installs; `tests/test_ui.lua` 6/6.
+- `status/status.lua` speaks Char.Vitals/Effects/Target on Alt+H/M/V/T with health warnings; record in
+  `agent-notes/feat-status.md`; `tests/test_status.lua` 23/23.
 - `build.py VERSION` builds a byte-reproducible `dist/mongoose.mpackage`.
 - Not yet run in a real Mudlet: there is none on the machine it was written on.
 
