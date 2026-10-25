@@ -76,6 +76,11 @@ end
 local TOGGLE_MASK = mudlet.keymodifier.Alt + mudlet.keymodifier.Shift
 local TOGGLE_CHORD = TOGGLE_MASK .. ":" .. mudlet.key.H
 local HELP_CHORD = TOGGLE_MASK .. ":" .. mudlet.key.F1
+-- The status readouts (status/status.lua) own Alt+H, M, V and T; a layer cannot take them.
+local RESERVED = {[TOGGLE_CHORD] = true, [HELP_CHORD] = true}
+for _, letter in ipairs({"H", "M", "V", "T"}) do
+  RESERVED[mudlet.keymodifier.Alt .. ":" .. mudlet.key[letter]] = true
+end
 -- Mudlet's codes for the Latin-1 characters, Exclam to ydiaeresis. Space (0x20)
 -- is left out: Mudlet types it without asking the key bindings.
 local FIRST_CHARACTER, LAST_CHARACTER = 0x21, 0xff
@@ -114,7 +119,7 @@ function K.install()
   local taken = {}
   local function add(mask, code, fn)
     local id = mask .. ":" .. code
-    if taken[id] or id == TOGGLE_CHORD or id == HELP_CHORD then return end
+    if taken[id] or RESERVED[id] then return end
     taken[id] = true
     K.installed[#K.installed + 1] = tempKey(mask, code, fn)
   end

@@ -17,6 +17,7 @@ MODULES = [
     ("Mongoose keys", ROOT / "keys" / "keys.lua"),
     ("Mongoose mapper", ROOT / "mapper" / "mapper.lua"),
     ("Mongoose and the starter UI", ROOT / "ui" / "ui.lua"),
+    ("Mongoose status", ROOT / "status" / "status.lua"),
 ]
 FIXED_TIME = (2026, 10, 18, 0, 0, 0)
 
@@ -27,7 +28,7 @@ def config(version: str) -> str:
         "author = [[Mongoose]]",
         "title = [[Mongoose]]",
         f"version = [[{version}]]",
-        "description = [[Keys for the games and consoles you use, and a map of the rooms you visit.]]",
+        "description = [[Keys for the games and consoles you use, a map of the rooms you visit, and spoken status.]]",
         "",
     ])
 

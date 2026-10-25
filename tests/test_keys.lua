@@ -6,7 +6,8 @@ local said, sent, gmcpSent, handlers, keys, nextKey = {}, {}, {}, {}, {}, 0
 local cmdLine = ""
 
 mudlet = {
-  key = {Space = 0x20, Exclam = 0x21, A = 0x41, H = 0x48, P = 0x50, R = 0x52, S = 0x53, X = 0x58,
+  key = {Space = 0x20, Exclam = 0x21, A = 0x41, H = 0x48, M = 0x4d, P = 0x50, R = 0x52, S = 0x53, T = 0x54,
+    V = 0x56, X = 0x58,
     F1 = 0x01000030, Left = 0x01000012},
   keymodifier = {Shift = 0x02000000, Control = 0x04000000, Alt = 0x08000000, Meta = 0x10000000},
 }
@@ -70,7 +71,9 @@ arrive("Layer", {id = "#16186", label = "Yahtzee", modal = true, bindings = {
   {key = "s", modifiers = {}, command = "sheet", label = "Scorecards", autosend = true},
   {key = "s", modifiers = {"shift"}, command = "score ", label = "Score in a category", autosend = false},
   {key = "h", modifiers = {"alt", "shift"}, command = "grab", label = "Takes the toggle", autosend = true},
+  {key = "m", modifiers = {"alt"}, command = "grab", label = "Takes a status key", autosend = true},
 }})
+check("a layer cannot take a status key", not press(mudlet.key.M, Alt))
 check("announces a modal layer", said[#said] == "Yahtzee keys available. Alt+Shift+H for keys mode.")
 check("typing keys are not live outside keys mode", not press(mudlet.key.S))
 
