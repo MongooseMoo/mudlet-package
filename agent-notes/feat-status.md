@@ -37,8 +37,11 @@ Built by `build.py`, tests in `tests/`. Nothing else: no sounds, no UI panels.
 
 - Mudlet's starter UI listens to `gmcp.Char.Vitals` but reads only named keys (`hp`, `health`, ...:
   `src/packages/mudlet-base-ui/mudlet-base-ui.xml:731-733`); a list has none, so it shows no gauge. Left alone.
-- Mudlet runs the first key that matches a chord, or every one (`TKey::match`, `src/TKey.cpp:80-110`). A server
-  keys layer binding Alt+H/M/V/T would collide with the status keys; whether any live layer does is unchecked.
+- Mudlet runs the first key that matches a chord, or every one (`TKey::match`, `src/TKey.cpp:80-110`), so a
+  server keys layer binding Alt+H/M/V/T would collide with the status keys. Team lead's decision: `keys.lua`
+  keeps those four out of layers as it keeps out Alt+Shift+H (`RESERVED`); `tests/test_keys.lua` 37/37.
+- Team lead's decisions on the other two: the server will leave the Readiness row out of Char.Effects, so no
+  client change; the starter UI is left alone.
 
 - `$abilities:affects_rows` (#149604 [28], dump 2026-10-24T2135, lines 595/606/612) always gives string
   section, name and source, so the effect key needs no nil handling. It also returns a "Readiness: Ability
