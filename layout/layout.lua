@@ -35,21 +35,6 @@ local function say(text)
   echo("\n[Layout] " .. text .. "\n")
 end
 
--- The bracketed colour and style tags Mongoose writes into GMCP names ("[red]Outer Rim[normal]"). The same
--- vocabulary as the web client's src/stripMudAnsiTags.ts; bracketed text that is not one of them is kept.
-local TAGS = {}
-for _, tag in ipairs({"red", "green", "yellow", "blue", "purple", "cyan", "gray", "white", "magenta", "grey",
-    "bold", "unbold", "bright", "unbright", "blink", "unblink", "underline", "inverse", "beep", "normal"}) do
-  TAGS[tag] = true
-end
-
-function L.plain(text)
-  text = tostring(text or ""):gsub("%[(%a+)%]", function(tag)
-    if TAGS[tag:lower()] then return "" end
-  end)
-  return (text:gsub("^%s+", ""):gsub("%s+$", ""))
-end
-
 local function metres(n)
   return string.format("%.1f", n)
 end
@@ -304,9 +289,7 @@ end
 local function titleText()
   local room = L.room
   if not room then return "No layout for this room" end
-  local info = gmcp.Room and gmcp.Room.Info
-  local name = info and info.num == room.num and L.plain(info.name) or ("Room " .. room.num)
-  return escape(name) .. " (zoom " .. math.floor(L.zoom * 100 + 0.5) .. "%)"
+  return "Room layout (zoom " .. math.floor(L.zoom * 100 + 0.5) .. "%)"
 end
 
 function L.draw()
@@ -334,9 +317,6 @@ end
 function L.onLayout()
   local room = gmcp.Room.Layout
   if type(room) ~= "table" or type(room.size) ~= "table" then return end
-  -- names are shown as plain text everywhere: picture, tooltips and `layout`
-  for _, thing in ipairs(room.things or {}) do thing.name = L.plain(thing.name) end
-  for _, exit in ipairs(room.exits or {}) do exit.name = L.plain(exit.name) end
   L.room = room
   L.draw()
 end

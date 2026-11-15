@@ -111,7 +111,7 @@ check("a layout arriving prints nothing", #said == 0)
 check("a layout opens the room window docked on the right",
   windows.mongooseRoomLayout and windows.mongooseRoomLayout.docked == true
   and windows.mongooseRoomLayout.dockPosition == "right")
-check("the title names the room from Room.Info", windows.mongooseRoomLayoutTitle.text == "The Parlor (zoom 100%)")
+check("the title says the zoom", windows.mongooseRoomLayoutTitle.text == "Room layout (zoom 100%)")
 
 -- 400 x 600 view, 28 px margin: min(344 / 4, 544 / 6) = 86 px per metre.
 local floor = shown()[2]
@@ -159,7 +159,7 @@ check("layout gives each thing with its size and direction from you, not you",
 
 type_("layout zoom in")
 check("zoom in scales the picture by a quarter", find("oak table").width == math.floor(86 * 1.25 + 0.5)
-  and windows.mongooseRoomLayoutTitle.text == "The Parlor (zoom 125%)")
+  and windows.mongooseRoomLayoutTitle.text == "Room layout (zoom 125%)")
 L.onWheel({angleDeltaY = -120})
 check("the wheel zooms back out", find("oak table").width == 86)
 type_("layout zoom in")
@@ -237,10 +237,8 @@ local function sample()
   }
 end
 
-arrive("Info", {num = 1770, name = "[cyan]Laundry Room[normal]", exits = {s = 1751, w = 1767}})
+arrive("Info", {num = 1770, name = "Laundry Room", exits = {s = 1751, w = 1767}})
 arrive("Layout", sample())
-check("the sample's title has its markup stripped", windows.mongooseRoomLayoutTitle.text == "Laundry Room (zoom 100%)",
-  windows.mongooseRoomLayoutTitle.text)
 -- 400 x 600 view: min(344 / 6, 544 / 8) = 57.33 px per metre; the room is 344 x 458.67 px.
 local s = 344 / 6
 local floor2 = shown()[2]
@@ -265,18 +263,6 @@ check("things are placed from the centre", said[3]:find("folding table, 1.5 by 0
   .. "2.1 metres southeast of the centre", 1, true) ~= nil, said[3])
 check("a thing with no shapes is still listed in words",
   said[3]:find("a puddle of water and copper, place not given", 1, true) ~= nil, said[3])
-
-local marked = sample()
-marked.things[1].name = "[red]the west [BOLD]washer[normal] [spare]"
-marked.exits[1].name = "[cyan]south[normal]"
-arrive("Layout", marked)
-check("markup is stripped from names in the picture, unknown brackets kept",
-  find("the west washer [spare]") ~= nil and find("south") ~= nil)
-said = {}
-type_("layout")
-check("markup is stripped from names in words", said[3]:find("the west washer [spare], ", 1, true) ~= nil
-  and said[2]:find("Exits: south on", 1, true) ~= nil, said[3])
-check("a name that is only markup becomes empty", L.plain("[red][normal]") == "")
 
 if failures > 0 then
   print(failures .. " failed")

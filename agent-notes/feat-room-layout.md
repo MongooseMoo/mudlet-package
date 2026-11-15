@@ -9,7 +9,7 @@ command for players who do not see the picture.
 
 ## State
 
-- `layout/layout.lua` written; `tests/test_layout.lua` 63/63 under Lua 5.4.8 with stand-ins for Mudlet and Geyser;
+- `layout/layout.lua` written; `tests/test_layout.lua` 59/59 under Lua 5.4.8 with stand-ins for Mudlet and Geyser;
   the other four suites still pass. Added to `build.py` MODULES; `python build.py 6` builds. PR #3.
 - The tests carry the contract-shaped payload and the real one the live MOO sent for room #1770 (hub
   `reports/room-layout-sample-2026-11-14.json`, transcribed as a Lua table).
@@ -30,8 +30,9 @@ command for players who do not see the picture.
 - Room.Info for another room clears the picture, since non-spatial rooms send no Room.Layout.
 - `layout hide` is saved with `table.save` in the profile home, so a player who hid the window keeps it hidden.
 - Mudlet runs Lua 5.1: `math.atan2 or math.atan`.
-- Names (things, exits, the Room.Info title) have Mongoose's bracketed colour tags stripped ("[red]...[normal]"),
-  with the tag list of the web client's `src/stripMudAnsiTags.ts`; other bracketed text is kept.
+- Names are shown as sent, with no colour-tag stripping: the MOO sends thing names plain (`title():strip_ansi()`)
+  and exit names as the Room.Info keys, and the window title is just "Room layout (zoom N%)", not the room name.
+  A stripping copy of the web client's tag list was removed: code exists once (team lead, 2026-11-14).
 - A thing with `"shapes": []` (the sample's puddle) has nothing to draw; `layout` lists it as "place not given".
 - Doorway points sit slightly inside the walls in real data (south door at y -3.6 in an 8 m room); the bar goes on
   the nearest wall at the point's along-wall position.
