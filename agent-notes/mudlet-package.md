@@ -17,6 +17,9 @@ package per profile, so both live here. The full record of the keys work is the 
   whenever a Client.GUI package installs; `tests/test_ui.lua` 6/6.
 - `status/status.lua` speaks Char.Vitals/Effects/Target on Alt+H/M/V/T with health warnings; record in
   `agent-notes/feat-status.md`; `tests/test_status.lua` 23/23.
+- `layout/layout.lua` draws GMCP `Room.Layout` (the Mongoose hub's `agent-notes/spatial-room-svg.md`) with Geyser
+  labels in a docked user window, zoomable, and prints it in words on `layout`; record in
+  `agent-notes/feat-room-layout.md`; `tests/test_layout.lua` 50/50.
 - `build.py VERSION` builds a byte-reproducible `dist/mongoose.mpackage`.
 - Not yet run in a real Mudlet: there is none on the machine it was written on.
 
