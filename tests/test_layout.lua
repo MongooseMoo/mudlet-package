@@ -197,6 +197,87 @@ check("reloading replaces its handlers and alias instead of adding more", count 
 handlers.sysDisconnectionEvent()
 check("disconnecting clears the picture", L.room == nil and #shown() == 0)
 
+-- The Room.Layout the live MOO sent for room #1770, hub reports/room-layout-sample-2026-11-14.json, as Lua.
+local function sample()
+  return {
+    exits = {
+      {at = {0.0, -3.6, 0.0}, name = "south", to = 1751, width = 0.9},
+      {at = {-2.7, 0.0, 0.0}, name = "west", to = 1767, width = 0.9},
+    },
+    num = 1770,
+    size = {6.0, 8.0, 3.0},
+    things = {
+      {fixed = true, id = "#23011", kind = "object", mounted = false, name = "the west washer",
+       shapes = {{box = {{-2.8, -2.2}, {1.0, 1.65}, {0.0, 0.85}}}}},
+      {fixed = true, id = "#23028", kind = "object", mounted = false, name = "the east washer",
+       shapes = {{box = {{-1.8, -1.2}, {1.0, 1.65}, {0.0, 0.85}}}}},
+      {fixed = true, id = "#23036", kind = "object", mounted = false, name = "the west dryer",
+       shapes = {{box = {{-2.8, -2.2}, {-2.0, -1.35}, {0.0, 0.85}}}}},
+      {fixed = true, id = "#23041", kind = "object", mounted = false, name = "the east dryer",
+       shapes = {{box = {{-1.8, -1.2}, {-2.0, -1.35}, {0.0, 0.85}}}}},
+      {fixed = true, id = "#23253", kind = "object", mounted = false, name = "hand-wash tub",
+       shapes = {{box = {{-0.5, 0.0}, {1.0, 1.45}, {0.0, 0.9}}}}},
+      {fixed = true, id = "#23528", kind = "object", mounted = false, name = "laundry drying rack",
+       shapes = {{box = {{1.0, 2.2}, {1.0, 1.6}, {0.0, 1.1}}}}},
+      {fixed = true, id = "#23529", kind = "object", mounted = false, name = "folding table",
+       shapes = {{box = {{0.5, 2.0}, {-2.0, -1.3}, {0.0, 0.8}}}}},
+      {fixed = true, id = "#23535", kind = "object", mounted = false, name = "laundry supplies cabinet",
+       shapes = {{box = {{1.8, 2.2}, {-1.0, -0.6}, {0.0, 0.6}}}}},
+      {fixed = false, id = "#23884", kind = "object", mounted = false, name = "a glazed clay pot",
+       shapes = {{box = {{0.0, 0.1}, {2.0, 2.1}, {0.0, 0.1}}}}},
+      {fixed = false, id = "#31824", kind = "object", mounted = false, name = "laundry grid connection",
+       shapes = {{box = {{0.0, 0.3}, {0.0, 0.15}, {0.0, 0.4}}}}},
+      {fixed = false, id = "#31825", kind = "object", mounted = false, name = "laundry service panel",
+       shapes = {{box = {{0.0, 0.299999828}, {0.0, 0.149999914}, {0.0, 0.399999771}}}}},
+      {fixed = false, id = "#39832", kind = "object", mounted = false, name = "a puddle of water and copper",
+       shapes = {}},
+      {fixed = false, id = "#10211", kind = "object", mounted = false, name = "wall-mounted heat pump",
+       shapes = {{box = {{-3.0, -2.2}, {-4.0, -3.75}, {0.0, 0.3}}}}},
+    },
+  }
+end
+
+arrive("Info", {num = 1770, name = "[cyan]Laundry Room[normal]", exits = {s = 1751, w = 1767}})
+arrive("Layout", sample())
+check("the sample's title has its markup stripped", windows.mongooseRoomLayoutTitle.text == "Laundry Room (zoom 100%)",
+  windows.mongooseRoomLayoutTitle.text)
+-- 400 x 600 view: min(344 / 6, 544 / 8) = 57.33 px per metre; the room is 344 x 458.67 px.
+local s = 344 / 6
+local floor2 = shown()[2]
+check("the sample room is drawn to scale", floor2.width == 344 and floor2.height == 459)
+check("the sample's things with shapes are drawn", find("folding table") and find("wall-mounted heat pump")
+  and find("folding table").width == math.floor(1.5 * s + 0.5))
+check("a thing with no shapes is not drawn", find("a puddle of water and copper") == nil)
+local south, west2 = find("south"), find("west")
+check("a doorway inside the south wall is drawn on the wall, at its along-wall place",
+  south.y == math.floor(28 + 8 * s - 3 + 0.5) and south.x == math.floor(28 + 3 * s - 0.9 * s / 2 + 0.5),
+  south.x .. "," .. south.y)
+check("a doorway inside the west wall is drawn on the wall", west2.x == 25
+  and west2.y == math.floor(28 + 4 * s - 0.9 * s / 2 + 0.5), west2.x .. "," .. west2.y)
+
+said = {}
+type_("layout")
+check("the sample room's size", said[1] == "Room 6.0 by 8.0 metres, 3.0 high, north up.", said[1])
+check("with no you in the room, exits are placed from the centre",
+  said[2] == "Exits: south on the south wall, 3.6 metres south of the centre; "
+    .. "west on the west wall, 2.7 metres west of the centre.", said[2])
+check("things are placed from the centre", said[3]:find("folding table, 1.5 by 0.7 metres, "
+  .. "2.1 metres southeast of the centre", 1, true) ~= nil, said[3])
+check("a thing with no shapes is still listed in words",
+  said[3]:find("a puddle of water and copper, place not given", 1, true) ~= nil, said[3])
+
+local marked = sample()
+marked.things[1].name = "[red]the west [BOLD]washer[normal] [spare]"
+marked.exits[1].name = "[cyan]south[normal]"
+arrive("Layout", marked)
+check("markup is stripped from names in the picture, unknown brackets kept",
+  find("the west washer [spare]") ~= nil and find("south") ~= nil)
+said = {}
+type_("layout")
+check("markup is stripped from names in words", said[3]:find("the west washer [spare], ", 1, true) ~= nil
+  and said[2]:find("Exits: south on", 1, true) ~= nil, said[3])
+check("a name that is only markup becomes empty", L.plain("[red][normal]") == "")
+
 if failures > 0 then
   print(failures .. " failed")
   os.exit(1)
