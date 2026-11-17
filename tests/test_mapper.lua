@@ -99,6 +99,14 @@ check("keys long exit names by short direction", rooms[7000].stubs.n == true)
 arrive({num = 7001, name = "Hold", area = "Ship", exits = {}})
 check("named exits become special exits once their room exists", rooms[7000].special.hatch == 7001)
 
+arrive({num = 7100, name = "Yard", area = "Ship", exits = {gate = 7101, hatch = 7102},
+  directions = {gate = "west", hatch = "down"}})
+local yard = rooms[7100]
+arrive({num = 7101, name = "Lane", area = "Ship", exits = {}})
+check("places a named exit's room the way the server says it faces",
+  rooms[7101].x == yard.x - 1 and rooms[7101].y == yard.y and rooms[7101].z == yard.z)
+check("a named exit stays a special exit under its own name", yard.special.gate == 7101)
+
 dofile("mapper/mapper.lua")
 local count = 0
 for _ in pairs(handlers) do count = count + 1 end

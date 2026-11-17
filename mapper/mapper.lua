@@ -8,7 +8,10 @@
 -- Room.WrongDir or on arriving somewhere the map did not expect.
 --
 -- Room.Info (IRE shape, as Mongoose sends it):
---   {num, name, area, environment, exits = {n = 12, u = 40, hatch = 7}, weather}
+--   {num, name, area, environment, exits = {n = 12, u = 40, hatch = 7}, weather,
+--    directions = {n = "north", hatch = "down"}}
+-- directions is the way each exit faces, from the facing stored on it; exits
+-- that face no way are absent. A new room is placed by it, else by the name.
 
 mongoose = mongoose or {}
 mongoose.mapper = mongoose.mapper or {}
@@ -39,7 +42,7 @@ local ENV_FIRST = 300
 M.envs = M.envs or {outdoors = ENV_FIRST, indoors = ENV_FIRST + 1}
 local ENV_COLOURS = {outdoors = {110, 170, 100}, indoors = {150, 150, 150}}
 
-M.previous = M.previous or nil   -- {id =, exits =} of the last room entered
+M.previous = M.previous or nil   -- {id =, exits =, dirs =} of the last room entered
 M.pending = M.pending or {}      -- dest id -> list of {from =, key =} waiting for dest to exist
 M.walk = M.walk or nil           -- {dirs =, rooms =, i =} during a speedwalk
 
@@ -80,15 +83,16 @@ local function link(from, key, to)
   end
 end
 
--- Where a new room goes: one step from the room just left, in the direction
--- of the exit that led here; otherwise the origin of its area.
+-- Where a new room goes: one step from the room just left, the way the exit
+-- that led here faces (the server's direction, else its name); otherwise the
+-- origin of its area.
 local function placeNew(id)
   local prev = M.previous
   if prev and roomExists(prev.id) then
     for key, dest in pairs(prev.exits) do
       if dest == id then
         local x, y, z = getRoomCoordinates(prev.id)
-        local step = STEPS[key] or {1, 0, 0}
+        local step = STEPS[(prev.dirs or {})[key] or key] or {1, 0, 0}
         setRoomCoordinates(id, x + step[1], y + step[2], z + step[3])
         return
       end
@@ -104,6 +108,10 @@ function M.onRoomInfo()
   local exits = {}
   for key, dest in pairs(info.exits or {}) do
     if type(dest) == "number" and dest >= 1 then exits[short(key)] = dest end
+  end
+  local dirs = {}
+  for key, dir in pairs(info.directions or {}) do
+    if type(dir) == "string" and exits[short(key)] and STEPS[short(dir)] then dirs[short(key)] = short(dir) end
   end
 
   if not roomExists(id) then
@@ -129,7 +137,7 @@ function M.onRoomInfo()
   end
   M.pending[id] = nil
 
-  M.previous = {id = id, exits = exits}
+  M.previous = {id = id, exits = exits, dirs = dirs}
   centerview(id)
   M.walkArrived(id)
 end
