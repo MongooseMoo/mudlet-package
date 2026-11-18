@@ -264,6 +264,62 @@ check("things are placed from the centre", said[3]:find("folding table, 1.5 by 0
 check("a thing with no shapes is still listed in words",
   said[3]:find("a puddle of water and copper, place not given", 1, true) ~= nil, said[3])
 
+-- Classes and material, shaped like the live MOO's Room.Layout for room #25828 (hub
+-- reports/room-layout-sample-25828-2026-11-14.json); the person's name is made up.
+local KINDS = {
+  num = 4242,
+  size = {3.81, 5.13, 2.44},
+  exits = {},
+  things = {
+    {id = "#29617", name = "coffee table", kind = "object", fixed = false, mounted = false,
+     classes = {"table", "furniture", "thing", "gpo", "root_class"}, capabilities = {"support_surface"},
+     material = {{fraction = 1.0, species = "pine"}},
+     shapes = {{box = {{-0.4, 0.6}, {-1.665, -1.115}, {0.0, 0.4}}}}},
+    {id = "#3963", name = "trek box", kind = "object", fixed = false, mounted = false,
+     classes = {"radio", "audio_device", "thing", "gpo", "root_class"}, capabilities = {},
+     material = {
+       {fraction = 0.3, frozen_fraction = 1.0, phase = "solid", species = "circuitboard", vapor_fraction = 0.0},
+       {fraction = 0.6, frozen_fraction = 1.0, phase = "solid", species = "plastic", vapor_fraction = 0.0},
+       {fraction = 0.1, frozen_fraction = 1.0, phase = "solid", species = "steel", vapor_fraction = 0.0}},
+     shapes = {{box = {{-0.947, -0.447}, {0.334, 0.734}, {0.0, 0.3}}}}},
+    {id = "#29972", name = "weather station", kind = "object", fixed = true, mounted = true,
+     classes = {"thing", "gpo", "root_class"}, capabilities = {}, material = {},
+     shapes = {{box = {{-0.25, -0.15}, {-2.565, -2.465}, {1.5, 1.6}}}}},
+    {id = "#1", name = "plain crate", kind = "object", fixed = false, mounted = false,
+     shapes = {{box = {{0.0, 0.5}, {0.0, 0.5}, {0.0, 0.5}}}}},
+    {id = "#2", name = "Visitor", kind = "player", fixed = true, mounted = false,
+     classes = {"wiz", "prog", "builder", "player"}, material = {{fraction = 1.0, species = "flesh"}},
+     shapes = {{box = {{1.0, 1.4}, {1.0, 1.4}, {0.0, 1.8}}}}},
+  },
+}
+check("the main material is the largest fraction, extra keys ignored", L.mainMaterial(KINDS.things[2]) == "plastic")
+check("no material when the list is empty", L.mainMaterial(KINDS.things[3]) == nil)
+check("a thing is named with its nearest class and main material",
+  L.named(KINDS.things[1]) == "coffee table (table, pine)", L.named(KINDS.things[1]))
+check("an empty material list leaves the class alone",
+  L.named(KINDS.things[3]) == "weather station (thing)", L.named(KINDS.things[3]))
+check("a thing with neither keeps its name", L.named(KINDS.things[4]) == "plain crate")
+check("a person keeps their name, with no class or material",
+  L.named(KINDS.things[5]) == "Visitor (player)", L.named(KINDS.things[5]))
+
+arrive("Info", {num = 4242, name = "Living Room", exits = {}})
+arrive("Layout", KINDS)
+check("the picture names a thing with its class and material", find("coffee table (table, pine)") ~= nil)
+local labelText = false
+for _, lbl in ipairs(shown()) do
+  if lbl.text == "trek box (radio, plastic)" then labelText = true end
+end
+check("the label on the picture says it too", labelText)
+check("a person in the picture keeps a plain name", find("Visitor") ~= nil)
+said = {}
+type_("layout")
+check("layout says each thing with its class and material",
+  said[3]:find("coffee table (table, pine), 1.0 by 0.6 metres", 1, true) ~= nil
+  and said[3]:find("trek box (radio, plastic), ", 1, true) ~= nil
+  and said[3]:find("weather station (thing), ", 1, true) ~= nil
+  and said[3]:find("plain crate, ", 1, true) ~= nil
+  and said[3]:find("Visitor (player), ", 1, true) ~= nil, said[3])
+
 if failures > 0 then
   print(failures .. " failed")
   os.exit(1)

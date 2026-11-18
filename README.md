@@ -24,7 +24,8 @@ The package Mongoose (`mongoose.world`) gives Mudlet. When you log in with Mudle
   docked window draws the room from above, north up and to scale: its walls, each thing's footprint with its
   name, the doorways named on their walls, you, and a scale bar. The mouse wheel over it zooms, as do
   `layout zoom in`, `layout zoom out` and `layout zoom reset`. Type `layout` for the room in words: its size,
-  where you stand, and each exit and thing with how far and which way it is from you. `layout hide` puts the
+  where you stand, and each exit and thing with how far and which way it is from you. Things are named with what
+  they are and what they are made of, as the web client names them: "coffee table (table, pine)". `layout hide` puts the
   window away until `layout show`, and that is remembered. Nothing is printed when you walk in. The picture is
   redrawn each time you enter a room; it does not follow people moving about inside it.
 - **Starter UI** (`ui/ui.lua`): Mudlet's starter UI hides itself when any game package installs. This package has

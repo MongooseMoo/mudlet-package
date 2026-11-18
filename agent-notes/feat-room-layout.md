@@ -40,6 +40,16 @@ command for players who do not see the picture.
 - No MOO verb named `layout` is reachable by players (team lead checked $player, $spatial_room, $builder, $prog,
   $wiz in the dump), so the `layout` alias hides no server command.
 
+- 2026-11-17: rebased on main (mapper PR #4). Room.Layout things now carry `classes` (registered `$` names of
+  ancestors, nearest first), `capabilities` and `material` (list of `{species, fraction, ...}`, `[]` when none).
+  `L.named` names an object like the web client's `namedWithKind` (react-client `src/map/roomLayout.ts`): name,
+  then the first class and the species with the largest fraction, "coffee table (table, pine)". Used in the
+  `layout` words and in the picture's label and tooltip. People are not given class or material; the words keep
+  "(player)"/"(person)" as before, since Mudlet has one list where the web client has a People list.
+  `capabilities` is not shown (the web client does not show it either). Tests: 69/69; the live #25828 payload
+  (hub `reports/room-layout-sample-25828-2026-11-14.json`, real names, not committed) ran headless through
+  `L.describe` and `L.items` and named all 46 objects.
+
 ## Next step
 
 Team lead pushes. Then: a run in a real Mudlet, a

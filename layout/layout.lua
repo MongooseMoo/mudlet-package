@@ -39,6 +39,26 @@ local function metres(n)
   return string.format("%.1f", n)
 end
 
+-- The species with the largest fraction of a thing's material, or nil when none is sent. Entries may carry more
+-- keys (phase, frozen_fraction and the like); only species and fraction are read.
+function L.mainMaterial(thing)
+  local best
+  for _, part in ipairs(type(thing.material) == "table" and thing.material or {}) do
+    if not best or part.fraction > best.fraction then best = part end
+  end
+  return best and best.species
+end
+
+-- A thing's name with what it is, as the web client says it: "coffee table (table, pine)", its nearest class
+-- and its main material. People keep their names, with whether they are a player or a person.
+function L.named(thing)
+  if thing.kind ~= "object" then return thing.name .. " (" .. thing.kind .. ")" end
+  local kind = {}
+  if type(thing.classes) == "table" and thing.classes[1] then kind[#kind + 1] = thing.classes[1] end
+  kind[#kind + 1] = L.mainMaterial(thing)
+  return #kind > 0 and (thing.name .. " (" .. table.concat(kind, ", ") .. ")") or thing.name
+end
+
 -- The top-down extent of a thing: the union of its boxes' x/y ranges and its spheres' circles.
 function L.footprint(thing)
   local x0, x1, y0, y1
@@ -137,16 +157,16 @@ function L.describe(room)
   for _, thing in ipairs(room.things or {}) do
     if thing.id ~= myId then
       local box = L.footprint(thing)
-      local kind = thing.kind == "object" and "" or (" (" .. thing.kind .. ")")
+      local named = L.named(thing)
       if box then
         local cx, cy = centre(box)
         local where = bearing(fx, fy, cx, cy)
-        things[#things + 1] = thing.name .. kind .. ", " .. metres(box.x1 - box.x0) .. " by "
+        things[#things + 1] = named .. ", " .. metres(box.x1 - box.x0) .. " by "
           .. metres(box.y1 - box.y0) .. " metres, " .. (where == "beside" and ("beside " .. from)
           or (where .. " of " .. from))
       else
         -- a thing with no shapes has no place to draw, but it is in the room
-        things[#things + 1] = thing.name .. kind .. ", place not given"
+        things[#things + 1] = named .. ", place not given"
       end
     end
   end
@@ -194,7 +214,7 @@ function L.items(room, width, height, zoom)
     local bw, bh = math.max((box.x1 - box.x0) * s, 3), math.max((box.y1 - box.y0) * s, 3)
     local border = thing.mounted and "dashed" or "solid"
     local radius = box.round and ("border-radius: " .. math.floor(math.min(bw, bh) / 2) .. "px;") or ""
-    local label = mine and "You" or thing.name
+    local label = mine and "You" or thing.kind == "object" and L.named(thing) or thing.name
     add({x = px(box.x0), y = py(box.y1), w = bw, h = bh,
       css = "background-color: " .. colour .. "; border: 1px " .. border .. " rgb(235, 235, 235);" .. radius,
       tip = label})
