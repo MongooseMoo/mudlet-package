@@ -20,8 +20,16 @@ The package Mongoose (`mongoose.world`) gives Mudlet. When you log in with Mudle
   **Alt+H** says your health as a percent with how you look, **Alt+M** every power reserve (mana, qi and the
   like), **Alt+V** your body reserve, **Alt+T** the health of what you are fighting. When your health falls below
   50, 25 or 10 percent it says so once. When an effect starts or ends it says which.
+- **Room layout** (`layout/layout.lua`): in a room laid out in metres, the server sends GMCP `Room.Layout` and a
+  docked window draws the room from above, north up and to scale: its walls, each thing's footprint with its
+  name, the doorways named on their walls, you, and a scale bar. The mouse wheel over it zooms, as do
+  `layout zoom in`, `layout zoom out` and `layout zoom reset`. Type `layout` for the room in words: its size,
+  where you stand, and each exit and thing with how far and which way it is from you. Things are named with what
+  they are and what they are made of, as the web client names them: "coffee table (table, pine)". `layout hide` puts the
+  window away until `layout show`, and that is remembered. Nothing is printed when you walk in. The picture is
+  redrawn each time you enter a room; it does not follow people moving about inside it.
 - **Starter UI** (`ui/ui.lua`): Mudlet's starter UI hides itself when any game package installs. This package has
-  no interface of its own, so it brings the starter UI back (its dock, map and chat tabs), unless you hid it
+  no dock, map or chat of its own, so it brings the starter UI back (its dock, map and chat tabs), unless you hid it
   yourself with `baseui hide`.
 
 ## Test, build and release
@@ -29,6 +37,7 @@ The package Mongoose (`mongoose.world`) gives Mudlet. When you log in with Mudle
 ```sh
 lua tests/test_keys.lua    # the keys module against stand-ins for Mudlet's functions
 lua tests/test_status.lua  # the status module, likewise
+lua tests/test_layout.lua  # the room layout module, likewise
 python build.py 2          # writes dist/mongoose.mpackage
 gh release create v2 dist/mongoose.mpackage --title "Mongoose 2"
 ```
